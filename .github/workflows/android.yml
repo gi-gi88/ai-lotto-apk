@@ -16,7 +16,7 @@ jobs:
       uses: actions/setup-java@v3
       with:
         distribution: "zulu"
-        java-version: "17"  # ✅ Cordova Android 13에 필요
+        java-version: "17"
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
@@ -26,10 +26,11 @@ jobs:
     - name: Install Cordova
       run: npm install -g cordova
 
+    - name: Add Android Platform
+      run: cordova platform add android
+
     - name: Build Android APK
-      run: |
-        cordova platform add android
-        cordova build android
+      run: cordova build android
       env:
         JAVA_HOME: ${{ env.JAVA_HOME }}
         ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
@@ -51,9 +52,3 @@ jobs:
       with:
         name: apk-qr
         path: apk_qr.png
-        cordova platform add android
-        cordova build android
-      env:
-        JAVA_HOME: ${{ env.JAVA_HOME }}
-        ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-        GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
