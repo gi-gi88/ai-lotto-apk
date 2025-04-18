@@ -35,7 +35,7 @@ jobs:
         GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3  # ✅ 또는 안정 커밋 SHA 사용 가능
+      uses: actions/upload-artifact@9e5a4d05c8cd901fe2be8a4370020a11c0aafc4c
       with:
         name: ai-lotto-apk
         path: platforms/android/app/build/outputs/apk/debug/*.apk
