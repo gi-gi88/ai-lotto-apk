@@ -36,7 +36,7 @@ jobs:
         ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
 
-    - name: Upload APK to transfer.sh
+   - name: Upload APK to transfer.sh
       run: |
         curl --upload-file platforms/android/app/build/outputs/apk/debug/app-debug.apk https://transfer.sh/app-debug.apk > apk_url.txt
         echo "📦 APK URL:"
@@ -45,8 +45,8 @@ jobs:
     - name: Generate QR code for APK URL
       run: |
         sudo apt-get update && sudo apt-get install -y qrencode
-        qrencode -o apk_qr.png "$(cat apk_url.txt)"
-
+        qrencode -t ANSI "$(cat apk_url.txt)"
+        
     - name: Upload QR Image
       uses: actions/upload-artifact@v2  # ✅ 안정 버전
       with:
