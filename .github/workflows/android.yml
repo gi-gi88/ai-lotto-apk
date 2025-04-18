@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -15,7 +16,7 @@ jobs:
       uses: actions/setup-java@v3
       with:
         distribution: "zulu"
-        java-version: "17"  # ✅ Java 17로 변경
+        java-version: "17"  # ✅ Cordova Android 13에 필요
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
@@ -25,8 +26,31 @@ jobs:
     - name: Install Cordova
       run: npm install -g cordova
 
-    - name: Create Android Platform and Build
+    - name: Build Android APK
       run: |
+        cordova platform add android
+        cordova build android
+      env:
+        JAVA_HOME: ${{ env.JAVA_HOME }}
+        ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+
+    - name: Upload APK to transfer.sh
+      run: |
+        curl --upload-file platforms/android/app/build/outputs/apk/debug/app-debug.apk https://transfer.sh/app-debug.apk > apk_url.txt
+        echo "📦 APK URL:"
+        cat apk_url.txt
+
+    - name: Generate QR code for APK URL
+      run: |
+        sudo apt-get update && sudo apt-get install -y qrencode
+        qrencode -o apk_qr.png "$(cat apk_url.txt)"
+
+    - name: Upload QR Image
+      uses: actions/upload-artifact@v3
+      with:
+        name: apk-qr
+        path: apk_qr.png
         cordova platform add android
         cordova build android
       env:
