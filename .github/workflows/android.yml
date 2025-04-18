@@ -16,7 +16,7 @@ jobs:
       uses: actions/setup-java@v3
       with:
         distribution: "zulu"
-        java-version: "17"
+        java-version: "17"  # Cordova Android 13 이상 필요
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
@@ -48,7 +48,7 @@ jobs:
         qrencode -o apk_qr.png "$(cat apk_url.txt)"
 
     - name: Upload QR Image
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v2  # ✅ 안정 버전
       with:
         name: apk-qr
         path: apk_qr.png
