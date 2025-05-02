@@ -1,66 +1,60 @@
 name: Build & Package AI Lotto
 
-# main 브랜치에 푸시되거나, 수동으로 워크플로우를 실행할 수 있습니다
+# 푸시되거나 수동 실행(Dispatch) 시 워크플로우 트리거
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
+    name: 🏗 Build Android APK
     runs-on: ubuntu-latest
+
     steps:
       # 1. 코드 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Java 세팅 (Cordova/Gradle 빌드용)
-      - name: Set up JDK 11
+      # 2. Node.js 설치 (Cordova 빌드용)
+      - name: Setup Node.js
+        uses: actions/setup-node@v20
+        with:
+          node-version: '16'
+
+      # 3. Java 설치 (Android SDK용)
+      - name: Setup Java JDK
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: 11
+          java-version: '17'
 
-      # 3. Node.js (Cordova CLI 등 필요 시)
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-
-      # 4. Gradle 빌드 (app-debug.apk 생성)
-      - name: Build Debug APK
+      # 4. Cordova/Capacitor 등 의존성 설치
+      - name: Install npm dependencies
         run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          cd www
+          npm ci
 
-      # 5. 빌드 결과물 업로드
-      - name: Upload APK
-        uses: actions/upload-artifact@v2
-        with:
-          name: app-debug.apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+      # 5. APK 빌드
+      - name: Build Android (debug)
+        run: |
+          cd www
+          npx cordova build android --debug
 
-      - name: Upload 추천결과 PDF
-        uses: actions/upload-artifact@v2
+      # 6. APK 아티팩트 업로드
+      - name: Upload app-debug.apk
+        uses: actions/upload-artifact@v3
         with:
-          name: 추천결과.pdf
-          path: 추천결과.pdf
+          name: ai-lotto-apk
+          path: www/platforms/android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Upload QR_설치 이미지
-        uses: actions/upload-artifact@v2
+      # 7. 추가 자산들도 아티팩트로 업로드
+      - name: Upload PDF / 이미지 / CSV / 텍스트
+        uses: actions/upload-artifact@v3
         with:
-          name: QR_설치.png
-          path: QR_설치.png
-
-      - name: Upload 설치안내서 TXT
-        uses: actions/upload-artifact@v2
-        with:
-          name: 설치안내서.txt
-          path: 설치안내서.txt
-
-      - name: Upload 북마크통계 CSV
-        uses: actions/upload-artifact@v2
-        with:
-          name: 북마크통계.csv
-          path: 북마크통계.csv
+          name: ai-lotto-assets
+          path: |
+            추천결과.pdf
+            QR_설치.png
+            설치안내서.txt
+            북마크통계.csv
