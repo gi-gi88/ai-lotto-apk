@@ -1,6 +1,5 @@
-name: Build Cordova APK
+name: Build Android APK
 
-# main 브랜치로 푸시될 때마다 실행
 on:
   push:
     branches:
@@ -11,40 +10,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) 코드 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2) Node.js 설치 (Cordova CLI 사용을 위해)
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          node-version: '16'
+          distribution: temurin
+          java-version: 17
 
-      # 3) 프로젝트 의존성 설치
-      - name: Install npm dependencies
-        run: npm install
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
 
-      # 4) Cordova CLI 전역 설치 (없으면)
-      - name: Install Cordova CLI
-        run: npm install -g cordova
+      - name: Build with Gradle
+        run: ./gradlew assembleRelease
 
-      # 5) Android 플랫폼 추가/갱신
-      - name: Prepare Android platform
-        run: |
-          cordova platform rm android || true
-          cordova platform add android@latest
-
-      # 6) APK 릴리스 빌드
-      - name: Build Android APK (release)
-        run: cordova build android --release
-
-      # 7) 결과물(Release APK) 업로드
       - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
           name: ai-lotto-apk
-          # 실제 앱이 생성되는 경로를 명시
-          path: |
-            platforms/android/app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/apk/release/*.apk
 
