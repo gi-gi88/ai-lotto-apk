@@ -1,72 +1,43 @@
 name: Build & Package AI Lotto
 
-# push가 main 브랜치에 발생할 때마다 워크플로를 실행합니다.
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     name: Build Android APK & Upload Artifacts
     runs-on: ubuntu-latest
+
     steps:
-      - name: 🏷 Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-
-      - name: ☕ Setup Java
+      - name: Set up Java (for Cordova/Android SDK)
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: 📦 Install dependencies
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
         run: |
           npm install -g cordova
           npm ci
 
-      - name: ⚙️ Build Android release
+      - name: Build Cordova Android
         run: |
-          cd www
+          cordova platform rm android || true
+          cordova platform add android@11
           cordova build android --release
 
-      - name: 📁 Collect APK
-        run: |
-          # 빌드된 APK가 platforms/android/app/build/outputs/apk/release 에 생성됩니다.
-          mkdir -p artifacts
-          cp platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk artifacts/app-debug.apk
-
-      - name: 📤 Upload APK artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
           name: ai-lotto-apk
-          path: artifacts/app-debug.apk
-
-      - name: 📄 Upload PDF 추천결과
-        uses: actions/upload-artifact@v3
-        with:
-          name: ai-lotto-recommendation
-          path: 추천결과.pdf
-
-      - name: 🖼 Upload QR 설치 이미지
-        uses: actions/upload-artifact@v3
-        with:
-          name: ai-lotto-qr-install
-          path: QR_설치.png
-
-      - name: 📝 Upload 설치 안내서
-        uses: actions/upload-artifact@v3
-        with:
-          name: ai-lotto-readme
-          path: 설치안내서.txt
-
-      - name: 📊 Upload 북마크 통계
-        uses: actions/upload-artifact@v3
-        with:
-          name: ai-lotto-bookmark-stats
-          path: 북마크통계.csv
+          path: app/platforms/android/app/build/outputs/apk/release/app-release.apk
