@@ -1,52 +1,38 @@
 name: Build & Package AI Lotto
 
-# main 브랜치에 push되거나 pull_request가 열릴 때 워크플로우 실행
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
-    name: 📦 Build Android APK
     runs-on: ubuntu-latest
-
     steps:
-      # 1) 레포 복제
-      - name: Checkout repository
-        uses: actions/checkout@v3
 
-      # 2) Node.js (Cordova 등) 설치
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18"
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # 3) JDK 설치 (Android 빌드용)
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
 
-      # 4) 프로젝트 의존성 설치
-      - name: Install dependencies
-        run: |
-          npm ci
-          # Cordova 플랫폼 및 플러그인 설치, 필요 시 추가 명령
-          # e.g. npx cordova platform add android@latest
+    - name: Install dependencies
+      run: |
+        npm ci
 
-      # 5) Android 빌드
-      - name: Build Cordova Android
-        run: |
-          npx cordova prepare android --nobuild
-          npx cordova build android --release
-        # 빌드 출력물이 보통 platforms/android/app/build/outputs/apk/release/*.apk 에 생성됩니다.
+    - name: Add Android SDK & tools
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 31
+        target: google_apis
 
-      # 6) APK 아티팩트로 업로드
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ai-lotto-apk
-          path: platforms/android/app/build/outputs/apk/release/app-release.apk
+    - name: Build Cordova Android APK
+      run: |
+        npx cordova build android --release
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: ai-lotto-apk
+        path: platforms/android/app/build/outputs/apk/release/app-release.apk
