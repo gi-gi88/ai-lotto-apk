@@ -1,50 +1,43 @@
-name: Build & Package AI Lotto
+name: Build Cordova APK
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:    # 수동 실행 버튼 노출
+  workflow_dispatch:
 
 jobs:
-  build-and-package:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Java 17
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'zulu'
-        java-version: '17'
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    - name: Install Cordova
-      run: npm install -g cordova
+      - name: Install Cordova
+        run: npm install -g cordova
 
-    - name: Build Android APK
-      run: |
-        cordova platform add android
-        cordova build android --release
+      - name: Build Android APK
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME }}
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+          GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+        run: |
+          cordova platform add android
+          cordova build android --release
 
-    - name: Prepare dist folder
-      run: |
-        mkdir -p dist
-        cp platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk dist/app-debug.apk
-        cp 추천결과.pdf 북마크통계.csv QR_설치.png 설치안내서.txt dist/
-
-    - name: Create ZIP package
-      run: |
-        cd dist
-        zip -r ../투자자금_AI_Lotto_Final_Package.zip ./*
-
-    - name: Upload ZIP artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: ai-lotto-package
-        path: 투자자금_AI_Lotto_Final_Package.zip
+      # ——————————————————————————————————————
+      # 이제부터 업로드(artifact) 단계는 제거했습니다.
+      # ZIP이나 APK파일을 직접 받아보실 분은
+      # transfer.sh, GH-Pages, S3 등 외부 호스팅을 이용하세요.
+      # ——————————————————————————————————————
