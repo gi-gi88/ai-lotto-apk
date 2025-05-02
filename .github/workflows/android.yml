@@ -1,4 +1,4 @@
-name: Build Cordova APK
+e: Build Cordova APK
 
 # main 브랜치에 푸시될 때마다 실행
 on:
