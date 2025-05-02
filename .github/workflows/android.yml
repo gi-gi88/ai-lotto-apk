@@ -1,48 +1,72 @@
+# .github/workflows/android.yml
 name: Build & Package AI Lotto
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  build:
+  build-and-upload:
     name: Build Android APK & Upload Artifacts
     runs-on: ubuntu-latest
 
     steps:
-      # 1) 소스 체크아웃
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # 2) Java 설치 (Android 빌드용)
-      - name: Set up Java 11
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
+    - name: Set up Node.js
+      uses: actions/setup-node@v20
+      with:
+        node-version: '18'
 
-      # 3) Node.js 설치 (Cordova, Ionic 등)
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
+    - name: Set up Java (for Cordova/Gradle)
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '11'
 
-      # 4) 의존성 설치
-      - name: npm install
-        run: npm ci
+    - name: Install dependencies
+      run: |
+        npm install -g cordova
+        npm ci
 
-      # 5) Cordova/Gradle 빌드
-      - name: Build Android APK
-        run: |
-          npx cordova build android --release
-          # APK가 생성되는 경로에 맞춰 아래 경로를 수정하세요.
-          # 예) ./platforms/android/app/build/outputs/apk/release/app-release.apk
-          ls -al ./platforms/android/app/build/outputs/apk/release
+    - name: Build Cordova Android
+      run: |
+        cordova platform add android
+        cordova build android --release
 
-      # 6) APK 업로드
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ai-lotto-apk
-          path: platforms/android/app/build/outputs/apk/release/*.apk
+    - name: Collect APK artifact
+      run: |
+        ls platforms/android/app/build/outputs/apk/release
+      # 이 경로는 Cordova Android 10+ 기준입니다. 
+      # 실제 생성된 APK 경로를 확인하고 맞춰 주세요.
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ai-lotto-app-debug
+        path: platforms/android/app/build/outputs/apk/release/app-release.apk
+
+    - name: Upload PDF recommendation
+      uses: actions/upload-artifact@v3
+      with:
+        name: recommendation-pdf
+        path: 추천결과.pdf
+
+    - name: Upload bookmarks CSV
+      uses: actions/upload-artifact@v3
+      with:
+        name: bookmarks-csv
+        path: 북마크통계.csv
+
+    - name: Upload install guide TXT
+      uses: actions/upload-artifact@v3
+      with:
+        name: install-guide
+        path: 설치안내서.txt
+
+    - name: Upload QR image
+      uses: actions/upload-artifact@v3
+      with:
+        name: qr-install-image
+        path: QR_설치.png
