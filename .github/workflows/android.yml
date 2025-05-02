@@ -1,6 +1,6 @@
 name: Build & Package AI Lotto
 
-# main 브랜치에 푸시될 때마다 실행
+# push가 main 브랜치에 발생할 때마다 워크플로를 실행합니다.
 on:
   push:
     branches:
@@ -11,53 +11,62 @@ jobs:
     name: Build Android APK & Upload Artifacts
     runs-on: ubuntu-latest
     steps:
-      # 1) 코드 체크아웃
-      - name: Checkout repository
+      - name: 🏷 Checkout repository
         uses: actions/checkout@v3
 
-      # 2) Java 설치 (Android 빌드를 위해)
-      - name: Set up JDK 11
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - name: ☕ Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '11'
 
-      # 3) Node.js 설치 (Cordova / NPM 스크립트용)
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      # 4) 프로젝트 종속성 설치
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: |
+          npm install -g cordova
           npm ci
 
-      # 5) Android 플랫폼 준비 (Cordova 예시)
-      - name: Add Android platform
+      - name: ⚙️ Build Android release
         run: |
-          npx cordova platform add android --save
+          cd www
+          cordova build android --release
 
-      # 6) APK 빌드
-      - name: Build debug APK
+      - name: 📁 Collect APK
         run: |
-          npx cordova build android --debug --release
+          # 빌드된 APK가 platforms/android/app/build/outputs/apk/release 에 생성됩니다.
+          mkdir -p artifacts
+          cp platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk artifacts/app-debug.apk
 
-      # 7) 빌드 결과물을 GitHub 아티팩트로 업로드
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v2
+      - name: 📤 Upload APK artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: app-debug
-          path: |
-            platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          name: ai-lotto-apk
+          path: artifacts/app-debug.apk
 
-      # 8) 추가 리소스(추천결과.pdf 등) 업로드
-      - name: Upload other artifacts
-        uses: actions/upload-artifact@v2
+      - name: 📄 Upload PDF 추천결과
+        uses: actions/upload-artifact@v3
         with:
-          name: resources
-          path: |
-            추천결과.pdf
-            북마크통계.csv
-            QR_설치.png
-            설치안내서.txt
+          name: ai-lotto-recommendation
+          path: 추천결과.pdf
+
+      - name: 🖼 Upload QR 설치 이미지
+        uses: actions/upload-artifact@v3
+        with:
+          name: ai-lotto-qr-install
+          path: QR_설치.png
+
+      - name: 📝 Upload 설치 안내서
+        uses: actions/upload-artifact@v3
+        with:
+          name: ai-lotto-readme
+          path: 설치안내서.txt
+
+      - name: 📊 Upload 북마크 통계
+        uses: actions/upload-artifact@v3
+        with:
+          name: ai-lotto-bookmark-stats
+          path: 북마크통계.csv
