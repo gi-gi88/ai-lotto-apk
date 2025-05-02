@@ -1,67 +1,52 @@
 name: Build & Package AI Lotto
 
-# main 브랜치로 push 될 때마다 동작
+# main 브랜치에 push되거나 pull_request가 열릴 때 워크플로우 실행
 on:
   push:
+    branches: [ main ]
+  pull_request:
     branches: [ main ]
 
 jobs:
   build:
     name: 📦 Build Android APK
     runs-on: ubuntu-latest
+
     steps:
-      # 1) 리포지토리 체크아웃
+      # 1) 레포 복제
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2) Node.js 설치 (Cordova CLI 용)
+      # 2) Node.js (Cordova 등) 설치
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: "18"
 
-      # 3) Android SDK 설정
-      - name: Setup Java 11
+      # 3) JDK 설치 (Android 빌드용)
+      - name: Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '11'
 
-      # 4) Cordova & gradle 환경 준비
-      - name: Install Cordova CLI
-        run: npm install -g cordova
-
-      - name: Install Android SDK tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip openjdk-11-jdk
-          # ANDROID_HOME 환경변수
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O tools.zip
-          unzip tools.zip
-          rm tools.zip
-          yes | $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_HOME} "platforms;android-33" "build-tools;33.0.2"
-
-      # 5) 프로젝트 종속성 설치
+      # 4) 프로젝트 의존성 설치
       - name: Install dependencies
-        run: npm ci
-
-      # 6) Android 플랫폼 추가/업데이트
-      - name: Prepare Android platform
         run: |
-          cordova platform rm android || true
-          cordova platform add android@latest
+          npm ci
+          # Cordova 플랫폼 및 플러그인 설치, 필요 시 추가 명령
+          # e.g. npx cordova platform add android@latest
 
-      # 7) APK 빌드
-      - name: Build Debug APK
+      # 5) Android 빌드
+      - name: Build Cordova Android
         run: |
-          cordova build android --debug --release -- --no-daemon
+          npx cordova prepare android --nobuild
+          npx cordova build android --release
+        # 빌드 출력물이 보통 platforms/android/app/build/outputs/apk/release/*.apk 에 생성됩니다.
 
-      # 8) 생성된 APK를 artifact 로 업로드
+      # 6) APK 아티팩트로 업로드
       - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
           name: ai-lotto-apk
-          path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          path: platforms/android/app/build/outputs/apk/release/app-release.apk
