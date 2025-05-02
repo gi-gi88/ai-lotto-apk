@@ -1,7 +1,11 @@
 name: Build Cordova APK
 
+# main 브랜치에 push/Pull request 시 실행
 on:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
@@ -11,40 +15,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 코드 체크아웃
-      - name: 📥 Checkout repository
+      # 1) 소스 코드 체크아웃
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Node.js & Cordova 설치
-      - name: ⚙️ Set up Node.js
+      # 2) Node.js 설치 (Cordova 빌드용)
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '16'
 
-      - name: 🔧 Install Cordova & Android SDK tools
-        run: |
-          npm install -g cordova
-          sudo apt-get update
-          sudo apt-get install -y default-jdk
-          # ANDROID_HOME 환경 변수 설정, sdkmanager 설치 등
-          mkdir -p $HOME/android-sdk
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platform-tools" "platforms;android-31"
-
-      # 3. 의존성 설치
-      - name: 🧩 Install project dependencies
+      # 3) 의존성 설치
+      - name: Install npm dependencies
         run: npm ci
 
-      # 4. Android 플랫폼 추가 및 빌드
-      - name: 🔨 Add Android platform & Build APK
-        run: |
-          cordova platform rm android || true
-          cordova platform add android@10.1.1
-          cordova build android --release
+      # 4) Java 11 설치 (Android SDK/Gradle 용)
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
 
-      # 5. APK 산출물 업로드
-      - name: 📂 Upload APK artifact
+      # 5) Cordova CLI 설치
+      - name: Install Cordova CLI
+        run: npm install -g cordova
+
+      # 6) Android 플랫폼 추가 및 빌드
+      - name: Build Android (debug)
+        run: |
+          # 프로젝트 루트에서 Cordova 빌드
+          cordova platform add android || true
+          cordova build android --debug
+
+      # 7) 생성된 APK를 아티팩트로 업로드
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
-          name: app-debug-apk
+          name: app-debug.apk
           path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
