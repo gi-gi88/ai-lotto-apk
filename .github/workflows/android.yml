@@ -2,8 +2,8 @@ name: Build & Package AI Lotto
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   build:
@@ -11,33 +11,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      # 1) 소스 체크아웃
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Java (for Cordova/Android SDK)
+      # 2) Java 설치 (Android 빌드용)
+      - name: Set up Java 11
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '11'
 
+      # 3) Node.js 설치 (Cordova, Ionic 등)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '16'
 
-      - name: Install dependencies
-        run: |
-          npm install -g cordova
-          npm ci
+      # 4) 의존성 설치
+      - name: npm install
+        run: npm ci
 
-      - name: Build Cordova Android
+      # 5) Cordova/Gradle 빌드
+      - name: Build Android APK
         run: |
-          cordova platform rm android || true
-          cordova platform add android@11
-          cordova build android --release
+          npx cordova build android --release
+          # APK가 생성되는 경로에 맞춰 아래 경로를 수정하세요.
+          # 예) ./platforms/android/app/build/outputs/apk/release/app-release.apk
+          ls -al ./platforms/android/app/build/outputs/apk/release
 
+      # 6) APK 업로드
       - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
           name: ai-lotto-apk
-          path: app/platforms/android/app/build/outputs/apk/release/app-release.apk
+          path: platforms/android/app/build/outputs/apk/release/*.apk
