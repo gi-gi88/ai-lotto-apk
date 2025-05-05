@@ -1,6 +1,7 @@
 # .github/workflows/android.yml
-name: Build & Package AI Lotto
+name: Build Android APK & Upload Artifacts
 
+# main 브랜치에 push 될 때마다 동작
 on:
   push:
     branches:
@@ -8,46 +9,50 @@ on:
 
 jobs:
   build:
-    name: Build Android APK & Upload Artifacts
+    # 사용 가능한 GitHub 호스티드 러너 중 하나를 골라 사용합니다
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read        # Checkout을 위해 코드를 읽을 수 있어야 하고
+      actions: write        # 아티팩트 업로드를 위해 Actions 권한 쓰기가 필요합니다
+
     steps:
-      - name: 체크아웃 소스
+      # 1) 깃 리포지토리를 체크아웃합니다
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Node.js 세팅
+      # 2) Node.js 설치 (Cordova/Capacitor 의존성용)
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Java 세팅 (빌드용)
+      # 3) Java 설치 (Android SDK / Gradle 빌드용)
+      - name: Setup Java
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '11'
+          distribution: 'temurin'   # AdoptOpenJDK 계열
+          java-version: '17'
 
-      - name: Cordova & Android SDK 설치
+      # 4) Android SDK 라이선스 동의 (필수)
+      - name: Accept Android SDK licenses
         run: |
-          npm install -g cordova
-          # Android SDK 환경변수 (Ubuntu에 기본 설치된 경로 기준)
-          export ANDROID_SDK_ROOT=$HOME/Android/Sdk
           yes | sdkmanager --licenses
-          sdkmanager "platforms;android-33" "build-tools;33.0.0"
 
-      - name: 의존성 설치
-        working-directory: ./www
+      # 5) 의존성 설치 (npm / yarn 등)
+      - name: Install dependencies
         run: npm ci
 
-      - name: APK 빌드
+      # 6) Android 빌드
+      - name: Build Android Debug APK
+        working-directory: ./   # 필요에 따라 Cordova/Capacitor 폴더로 조정
         run: |
-          cd www
-          cordova build android --release
-        env:
-          JAVA_HOME: /opt/hostedtoolcache/jdk/11*/x64
+          npm run build:android  # 보통은 cordova build android --debug 등의 명령
 
-      - name: 아티팩트 업로드
+      # 7) 빌드 결과물을 아티팩트로 업로드
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ai-lotto-apk
+          name: app-debug.apk
           path: |
-            www/platforms/android/app/build/outputs/apk/release/app-release.apk
-            www/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+            platforms/android/app/build/outputs/apk/debug/app-debug.apk
