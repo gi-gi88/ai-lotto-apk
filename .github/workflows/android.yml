@@ -1,4 +1,3 @@
-# .github/workflows/android.yml
 name: Build & Package AI Lotto
 
 on:
@@ -8,82 +7,75 @@ on:
 
 jobs:
   build:
+    name: Build Android APK & Upload Artifacts
     runs-on: ubuntu-latest
-    env:
-      JAVA_VERSION: '11'
-      NODE_VERSION: '16'
-      ANDROID_SDK_ROOT: ${{ runner.tool_cache }}/android-sdk
 
     steps:
-      # 1) 소스 체크아웃
+      # 1. 소스 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2) Java 설치
-      - name: Set up Java ${{ env.JAVA_VERSION }}
+      # 2. Java 11 설치 (Temurin)
+      - name: Set up Java 11
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
+          java-version: '11'
 
-      # 3) Node.js 설치
-      - name: Set up Node.js ${{ env.NODE_VERSION }}
+      # 3. Node.js 설치 (Cordova 빌드용)
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '18'
 
-      # 4) Android SDK 설치 (google-github-actions/setup-android 사용 v2)
+      # 4. Android SDK 설치 및 sdkmanager 제공
       - name: Set up Android SDK
         uses: google-github-actions/setup-android@v2
         with:
-          api-level: 31
-          build-tools: '31.0.0'
-          ndk: '21.4.7075529'
-          components: |
-            tools
-            platform-tools
+          api-level: 33
+          build-tools: '33.0.2'
 
-      # 5) SDK 라이선스 동의
+      # 5. Android SDK 라이선스 자동 동의
       - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses
+        run: |
+          yes | sdkmanager --licenses
 
-      # 6) npm 의존성 설치
+      # 6. 의존성 설치 (npm / Cordova 플러그인 등)
       - name: Install npm dependencies
         run: npm ci
 
-      # 7) Cordova Android APK 빌드
+      # 7. Cordova Android APK 빌드
       - name: Build Cordova Android APK
         run: npm run build-android
-        # 필요한 경우 working-directory 설정
-        # working-directory: ./path/to/cordova/project
+        # 또는: run: cordova build android --release
 
-      # 8) 산출물(artifacts) 업로드
-      - name: Upload app-debug.apk
-        uses: actions/upload-artifact@v2
+      # 8. 빌드 결과물 업로드
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v3
         with:
           name: app-debug.apk
           path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload 추천결과.pdf
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: 추천결과.pdf
-          path: 추천결과.pdf
+          path: ./추천결과.pdf
 
       - name: Upload QR_설치.png
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: QR_설치.png
-          path: QR_설치.png
+          path: ./QR_설치.png
 
       - name: Upload 설치안내서.txt
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: 설치안내서.txt
-          path: 설치안내서.txt
+          path: ./설치안내서.txt
 
       - name: Upload 북마크통계.csv
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: 북마크통계.csv
-          path: 북마크통계.csv
+          path: ./북마크통계.csv
