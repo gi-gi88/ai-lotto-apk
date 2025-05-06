@@ -38,7 +38,7 @@ jobs:
 
       # 6) 빌드 산출물(아티팩트) 업로드
   - name: APK 아티팩트 업로드
-  uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v4.6.2
   with:
     name: app-debug
     path: app/build/outputs/apk/debug/*.apk
