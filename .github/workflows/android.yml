@@ -11,71 +11,65 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 소스 체크아웃
+      # 1. 레포지토리 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Java 11 설치 (Temurin)
+      # 2. Java (Temurin 11) 설정
       - name: Set up Java 11
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '11'
 
-      # 3. Node.js 설치 (Cordova 빌드용)
+      # 3. Node.js 설정 (v18)
       - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+        uses: actions/setup-node@v18
 
-      # 4. Android SDK 설치 및 sdkmanager 제공
+      # 4. Android SDK 설치 및 라이선스 동의
       - name: Set up Android SDK
-        uses: google-github-actions/setup-android@v2
+        uses: google-github-actions/setup-android@v2.1.2
         with:
           api-level: 33
-          build-tools: '33.0.2'
-
-      # 5. Android SDK 라이선스 자동 동의
+          components: platform-tools
       - name: Accept Android SDK licenses
-        run: |
-          yes | sdkmanager --licenses
+        run: yes | sdkmanager --licenses
 
-      # 6. 의존성 설치 (npm / Cordova 플러그인 등)
+      # 5. 의존성 설치
       - name: Install npm dependencies
         run: npm ci
 
-      # 7. Cordova Android APK 빌드
+      # 6. Cordova 안드로이드 APK 빌드
       - name: Build Cordova Android APK
-        run: npm run build-android
-        # 또는: run: cordova build android --release
+        run: npm run build:android
 
-      # 8. 빌드 결과물 업로드
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v3
+      # 7. 산출물(Artifact) 업로드
+      - name: Upload app-debug.apk
+        uses: actions/upload-artifact@v3.2.1
         with:
           name: app-debug.apk
           path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload 추천결과.pdf
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.2.1
         with:
           name: 추천결과.pdf
-          path: ./추천결과.pdf
+          path: 추천결과.pdf
 
       - name: Upload QR_설치.png
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.2.1
         with:
           name: QR_설치.png
-          path: ./QR_설치.png
+          path: QR_설치.png
 
       - name: Upload 설치안내서.txt
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.2.1
         with:
           name: 설치안내서.txt
-          path: ./설치안내서.txt
+          path: 설치안내서.txt
 
       - name: Upload 북마크통계.csv
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.2.1
         with:
           name: 북마크통계.csv
-          path: ./북마크통계.csv
+          path: 북마크통계.csv
